@@ -6103,6 +6103,9 @@ static void P_3dMovement(player_t *player)
 				movepushside >>= 3;
 		}
 
+		// Decrease strafe intensity as you accelerate for more control
+		movepushside *= max(0.3, 1.0 - player->speed / (FixedMul(player->runspeed, player->mo->scale)*2.5));
+
 		// Finally move the player now that their speed/direction has been decided.
 		movepushside = FixedMul(movepushside, player->mo->scale);
 
