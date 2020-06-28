@@ -8056,6 +8056,41 @@ static void P_MovePlayer(player_t *player)
 			case CS_LEGACY:
 			case CS_STANDARD:
 				player->mo->angle = (cmd->angleturn<<16 /* not FRACBITS */);
+
+				// assist turn toward things you can collect or attack/trigger
+				{
+					float speed = player->speed / (float)FixedMul(player->runspeed, player->mo->scale);
+					fixed_t range = FixedMul(256*FRACUNIT, player->mo->scale);
+					angle_t tolerance = min(speed, 1.0)*ANGLE_45;
+
+					thinker_t *th;
+					mobj_t *mo2;
+					fixed_t x = player->mo->x;
+					fixed_t y = player->mo->y;
+					fixed_t z = player->mo->z;
+
+					for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
+					{
+						mo2 = (mobj_t *)th;
+
+						if (mo2==player->mo)
+							continue;
+
+						if (!(mo2->type == MT_RING || mo2->type == MT_COIN || mo2->flags & MF_SPRING || player->pflags & PF_SPINNING && mo2->flags & MF_SHOOTABLE))
+							continue;
+
+						if (P_AproxDistance(P_AproxDistance(mo2->x - x, mo2->y - y), mo2->z - z) > range)
+							continue;
+
+						angle_t angle = R_PointToAngle2(0, 0, mo2->x - x, mo2->y - y);
+						angle_t difference = angle - player->mo->angle;
+
+						if(difference < tolerance || difference > ANGLE_MAX-tolerance){
+							player->mo->angle = angle;
+							break;
+						}
+					}
+				}
 				break;
 
 			case CS_LMAOGALOG:
